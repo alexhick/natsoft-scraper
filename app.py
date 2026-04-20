@@ -60,8 +60,8 @@ async def scrape_event(client, url, last, initial):
         return []
     return extract_laps(html, last, initial, url)
 
-async def scrape_year(client, year, last, initial):
-    base = f"http://racing.natsoft.com.au/results/{year}/"
+async def scrape_all_events(client, last, initial):
+    base = "http://racing.natsoft.com.au/results/"
 
     html = await fetch(client, base)
     if not html:
@@ -69,13 +69,18 @@ async def scrape_year(client, year, last, initial):
 
     soup = BeautifulSoup(html, "html.parser")
 
+    # Find ALL links that look like result pages
     links = [
         base + a.get("href")
         for a in soup.find_all("a")
-        if a.get("href") and "event" in a.get("href")
+        if a.get("href") and ".html" in a.get("href")
     ]
 
+    # Filter for likely result pages
+    links = list(set(links))[:300]  # limit for performance
+
     tasks = [scrape_event(client, url, last, initial) for url in links]
+
     results = await asyncio.gather(*tasks)
 
     flat = []
@@ -91,8 +96,7 @@ def home():
 @app.post("/search")
 async def search(q: Query):
     async with httpx.AsyncClient() as client:
-        tasks = [scrape_year(client, y, q.last, q.initial) for y in YEARS]
-        results = await asyncio.gather(*tasks)
+        results = await scrape_all_events(client, q.last, q.initial)
 
     all_data = []
     for r in results:
