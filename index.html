@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: sans-serif; padding: 20px; }
+input, button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  font-size: 18px;
+}
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+}
+</style>
+</head>
+<body>
+
+<h2>Natsoft Driver Search</h2>
+
+<input id="last" placeholder="Last Name">
+<input id="initial" placeholder="First Initial">
+
+<button onclick="run()">Search & Download</button>
+
+<p id="status"></p>
+
+<script>
+async function run() {
+  document.getElementById("status").innerText = "Searching (30–90s)...";
+
+  const res = await fetch("/search", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      last: document.getElementById("last").value,
+      initial: document.getElementById("initial").value
+    })
+  });
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "laps.xlsx";
+  a.click();
+
+  document.getElementById("status").innerText = "Done";
+}
+</script>
+
+</body>
+</html>
